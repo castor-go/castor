@@ -146,7 +146,7 @@ Or you can specify a few configurations by using:
 ```go
 server := castor.Server(
 	castor.WithHost("127.0.0.1"),
-	castor.WithPort(4000), 
+	castor.WithPort(4000),
 	castor.WithLogger(customLogger),
 )
 ```
@@ -168,7 +168,7 @@ type ServerConfig struct {
 | `Host` | Interface to listen on. Default `0.0.0.0`. |
 | `Port` | TCP port. Default `3000`. |
 | `Logger` | Logger carried by the configuration. Request logging is controlled by [`DefaultLogger`](#defaultlogger) and [`RequestLogger`](#requestlogger); the bundled server does not automatically wire this field into the middleware chain. |
-| `IdleTimeout` | Maximum idle keep-alive connection time. |
+| `IdleTimeout` | Maximum idle keep-alive connection time. The server default is 10 seconds; `Config` replaces all fields, including this one. |
 | `ReadTimeout` | Maximum time allowed to read the request, including the body. |
 | `WriteTimeout` | Maximum time allowed to write the response. |
 
@@ -267,7 +267,7 @@ A request for `/assets/css/site.css` reads `./public/css/site.css`.
 func (s *WebServer) NotFound(handler NotFoundHandler) *WebServer
 ```
 
-`NotFound` installs a handler that replaces any `404 Not Found` response, including 404s written by matched route handlers. 
+`NotFound` installs a handler that replaces any `404 Not Found` response, including 404s written by matched route handlers.
 The handler receives the response body and is responsible for writing the replacement response.
 
 ```go
@@ -276,7 +276,7 @@ server := castor.Server().
 		castor.Json(res, map[string]any{
 			"status":  http.StatusNotFound,
 			"message": strings.TrimSpace(message),
-		}, statusCode)
+		}, http.StatusNotFound)
 	}).
 	Routes(castor.Get("/", homeHandler))
 ```
@@ -632,7 +632,7 @@ castor.Json(res, map[string]string{"name": fields["name"]})
 func Json(res http.ResponseWriter, data any, status ...int)
 ```
 
-`Json` marshals `data` as a JSON response, sets `Content-Type: application/json; charset=utf-8`, and writes the status code. With no status argument it uses `200 OK`. 
+`Json` marshals `data` as a JSON response, sets `Content-Type: application/json; charset=utf-8`, and writes the status code. With no status argument it uses `200 OK`.
 A marshaling failure produces a plain-text `500 Internal Server Error`.
 
 ```go

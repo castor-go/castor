@@ -61,10 +61,9 @@ func WithLogger(logger LoggerInterface) ServerOption {
 	}
 }
 
-// NotFoundHandler handles a 404 response.
-//
-// statusCode is the original status code and message is the original response
-// body produced by the route or by ServeMux for an unmatched route.
+// NotFoundHandler handles a 404 response. message is the original response
+// body produced by the route or by ServeMux for an unmatched route. The handler
+// is responsible for writing the response status and body.
 type NotFoundHandler func(res http.ResponseWriter, message string)
 
 // WebServer is the DSL entry point.

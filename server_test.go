@@ -36,7 +36,6 @@ func TestDefaultNotFound(t *testing.T) {
 
 func TestCustomNotFound(t *testing.T) {
 	called := 0
-	var gotCode int
 	var gotMessage string
 	server := Server().
 		Middlewares(func(next http.Handler) http.Handler {
@@ -49,6 +48,7 @@ func TestCustomNotFound(t *testing.T) {
 			called++
 			gotMessage = message
 			res.Header().Set("X-NotFound", "yes")
+			res.WriteHeader(http.StatusNotFound)
 			_, _ = io.WriteString(res, "custom not found")
 		}).
 		Routes(Get("/", func(http.ResponseWriter, *http.Request) {}))
@@ -60,8 +60,8 @@ func TestCustomNotFound(t *testing.T) {
 	if called != 1 {
 		t.Fatalf("not-found calls = %d, want 1", called)
 	}
-	if gotCode != http.StatusNotFound || gotMessage != "404 page not found\n" {
-		t.Fatalf("original details: code=%d message=%q", gotCode, gotMessage)
+	if gotMessage != "404 page not found\n" {
+		t.Fatalf("original message = %q", gotMessage)
 	}
 	if rec.Header().Get("X-NotFound") != "yes" || rec.Header().Get("X-Middleware") != "yes" {
 		t.Fatalf("headers = %#v", rec.Header())
@@ -70,13 +70,13 @@ func TestCustomNotFound(t *testing.T) {
 
 func TestCustomNotFoundHandlesRoute404(t *testing.T) {
 	called := 0
-	var gotCode int
 	var gotMessage string
 	server := Server().
 		NotFound(func(res http.ResponseWriter, message string) {
 			called++
 			gotMessage = message
 			res.Header().Set("X-Custom", "yes")
+			res.WriteHeader(http.StatusNotFound)
 			_, _ = io.WriteString(res, "custom: "+message)
 		}).
 		Routes(Get("/contacts/{id}", func(res http.ResponseWriter, req *http.Request) {
@@ -91,8 +91,8 @@ func TestCustomNotFoundHandlesRoute404(t *testing.T) {
 	if called != 1 {
 		t.Fatalf("not-found calls = %d, want 1", called)
 	}
-	if gotCode != http.StatusNotFound || gotMessage != "Contact not found" {
-		t.Fatalf("original details: code=%d message=%q", gotCode, gotMessage)
+	if gotMessage != "Contact not found" {
+		t.Fatalf("original message = %q", gotMessage)
 	}
 	if rec.Header().Get("X-Custom") != "yes" {
 		t.Fatalf("missing custom header: %#v", rec.Header())
