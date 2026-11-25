@@ -1,4 +1,4 @@
-// Package webgo is a small, function-based DSL for HTTP services built only
+// Package castor is a small, function-based DSL for HTTP services built only
 // on the Go standard library.
 package castor
 

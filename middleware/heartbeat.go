@@ -10,15 +10,15 @@ import (
 // rest of the chain. It must run globally, before the mux.
 func Heartbeat(endpoint string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if (r.Method == http.MethodGet || r.Method == http.MethodHead) &&
-				strings.EqualFold(r.URL.Path, endpoint) {
-				w.Header().Set("Content-Type", "text/plain")
-				w.WriteHeader(http.StatusOK)
-				_, _ = io.WriteString(w, ".")
+		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			if (req.Method == http.MethodGet || req.Method == http.MethodHead) &&
+				strings.EqualFold(req.URL.Path, endpoint) {
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusOK)
+				_, _ = io.WriteString(res, "{\"status\":\"ok\"}")
 				return
 			}
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(res, req)
 		})
 	}
 }

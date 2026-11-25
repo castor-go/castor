@@ -21,7 +21,7 @@ const RequestIDKey ctxKeyRequestID = 0
 var RequestIDHeader = "X-Request-Id"
 
 func (k *ContextKey) String() string {
-	return "webgo context value " + k.Name
+	return "context value " + k.Name
 }
 
 // GetValue returns ctx's value for key as T, or T's zero value.
