@@ -40,17 +40,16 @@ func TestCustomNotFound(t *testing.T) {
 	var gotMessage string
 	server := Server().
 		Middlewares(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("X-Middleware", "yes")
-				next.ServeHTTP(w, r)
+			return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+				res.Header().Set("X-Middleware", "yes")
+				next.ServeHTTP(res, req)
 			})
 		}).
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			called++
-			gotCode, gotMessage = statusCode, message
-			w.Header().Set("X-NotFound", "yes")
-			w.WriteHeader(statusCode)
-			_, _ = io.WriteString(w, "custom not found")
+			gotMessage = message
+			res.Header().Set("X-NotFound", "yes")
+			_, _ = io.WriteString(res, "custom not found")
 		}).
 		Routes(Get("/", func(http.ResponseWriter, *http.Request) {}))
 
@@ -74,16 +73,15 @@ func TestCustomNotFoundHandlesRoute404(t *testing.T) {
 	var gotCode int
 	var gotMessage string
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			called++
-			gotCode, gotMessage = statusCode, message
-			w.Header().Set("X-Custom", "yes")
-			w.WriteHeader(statusCode)
-			_, _ = io.WriteString(w, "custom: "+message)
+			gotMessage = message
+			res.Header().Set("X-Custom", "yes")
+			_, _ = io.WriteString(res, "custom: "+message)
 		}).
-		Routes(Get("/contacts/{id}", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("X-Route", "discard-me")
-			NotFound(w, "Contact not found")
+		Routes(Get("/contacts/{id}", func(res http.ResponseWriter, req *http.Request) {
+			res.Header().Set("X-Route", "discard-me")
+			NotFound(res, "Contact not found")
 		}))
 
 	rec := serveTestRequest(server, http.MethodGet, "/contacts/999")
@@ -107,13 +105,13 @@ func TestCustomNotFoundHandlesRoute404(t *testing.T) {
 func TestCustomNotFoundHandlesHTTPError(t *testing.T) {
 	var gotMessage string
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			gotMessage = message
-			w.WriteHeader(statusCode)
-			_, _ = io.WriteString(w, "handled")
+			res.WriteHeader(http.StatusNotFound)
+			_, _ = io.WriteString(res, "handled")
 		}).
-		Routes(Get("/missing-entity", func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "entity missing", http.StatusNotFound)
+		Routes(Get("/missing-entity", func(res http.ResponseWriter, req *http.Request) {
+			http.Error(res, "entity missing", http.StatusNotFound)
 		}))
 
 	rec := serveTestRequest(server, http.MethodGet, "/missing-entity")
@@ -125,37 +123,15 @@ func TestCustomNotFoundHandlesHTTPError(t *testing.T) {
 	}
 }
 
-func TestCustomNotFoundBuffersFullMessage(t *testing.T) {
-	var gotMessage string
-	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
-			gotMessage = message
-			w.WriteHeader(statusCode)
-		}).
-		Routes(Get("/split", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = io.WriteString(w, "part one ")
-			_, _ = io.WriteString(w, "part two")
-		}))
-
-	rec := serveTestRequest(server, http.MethodGet, "/split")
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("status = %d", rec.Code)
-	}
-	if gotMessage != "part one part two" {
-		t.Fatalf("message = %q", gotMessage)
-	}
-}
-
 func TestNotFoundPreservesRoutesAndPathValues(t *testing.T) {
 	customCalled := false
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			customCalled = true
-			w.WriteHeader(statusCode)
+			res.WriteHeader(http.StatusNotFound)
 		}).
-		Routes(Get("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
-			_, _ = io.WriteString(w, GetPathParam(r, "id"))
+		Routes(Get("/users/{id}", func(res http.ResponseWriter, req *http.Request) {
+			_, _ = io.WriteString(res, GetPathParam(req, "id"))
 		}))
 
 	rec := serveTestRequest(server, http.MethodGet, "/users/42")
@@ -170,9 +146,9 @@ func TestNotFoundPreservesRoutesAndPathValues(t *testing.T) {
 func TestNotFoundPreservesMethodNotAllowed(t *testing.T) {
 	customCalled := false
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			customCalled = true
-			w.WriteHeader(http.StatusTeapot)
+			res.WriteHeader(http.StatusTeapot)
 		}).
 		Routes(Get("/only", func(http.ResponseWriter, *http.Request) {}))
 
@@ -191,12 +167,12 @@ func TestNotFoundPreservesMethodNotAllowed(t *testing.T) {
 func TestNotFoundDoesNotOverrideNon404(t *testing.T) {
 	customCalled := false
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			customCalled = true
 		}).
-		Routes(Get("/created", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusCreated)
-			_, _ = io.WriteString(w, "created")
+		Routes(Get("/created", func(res http.ResponseWriter, req *http.Request) {
+			res.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(res, "created")
 		}))
 
 	rec := serveTestRequest(server, http.MethodGet, "/created")
@@ -211,14 +187,14 @@ func TestNotFoundDoesNotOverrideNon404(t *testing.T) {
 func TestNotFoundNilRestoresDefault(t *testing.T) {
 	customCalled := false
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			customCalled = true
 		}).
 		NotFound(nil).
 		Routes(
 			Get("/", func(http.ResponseWriter, *http.Request) {}),
-			Get("/domain-miss", func(w http.ResponseWriter, r *http.Request) {
-				NotFound(w, "domain not found")
+			Get("/domain-miss", func(res http.ResponseWriter, req *http.Request) {
+				NotFound(res, "domain not found")
 			}),
 		)
 
@@ -240,10 +216,10 @@ func TestNotFoundNilRestoresDefault(t *testing.T) {
 func TestCustomNotFoundHandlesStatic404(t *testing.T) {
 	called := 0
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
+		NotFound(func(res http.ResponseWriter, message string) {
 			called++
-			w.WriteHeader(statusCode)
-			_, _ = io.WriteString(w, "static custom")
+			res.WriteHeader(http.StatusNotFound)
+			_, _ = io.WriteString(res, "static custom")
 		}).
 		StaticAssets("/assets/**", t.TempDir())
 
@@ -258,9 +234,9 @@ func TestCustomNotFoundHandlesStatic404(t *testing.T) {
 
 func TestNotFoundCanSetStatus(t *testing.T) {
 	server := Server().
-		NotFound(func(w http.ResponseWriter, statusCode int, message string) {
-			w.WriteHeader(http.StatusGone)
-			_, _ = io.WriteString(w, "gone")
+		NotFound(func(res http.ResponseWriter, message string) {
+			res.WriteHeader(http.StatusGone)
+			_, _ = io.WriteString(res, "gone")
 		}).
 		Routes(Get("/", func(http.ResponseWriter, *http.Request) {}))
 

@@ -43,11 +43,29 @@ func Config(cfg ServerConfig) ServerOption {
 	}
 }
 
+func WithHost(addr string) ServerOption {
+	return func(s *WebServer) {
+		s.cfg.Host = addr
+	}
+}
+
+func WithPort(port int) ServerOption {
+	return func(s *WebServer) {
+		s.cfg.Port = port
+	}
+}
+
+func WithLogger(logger LoggerInterface) ServerOption {
+	return func(s *WebServer) {
+		s.cfg.Logger = logger
+	}
+}
+
 // NotFoundHandler handles a 404 response.
 //
 // statusCode is the original status code and message is the original response
 // body produced by the route or by ServeMux for an unmatched route.
-type NotFoundHandler func(res http.ResponseWriter, statusCode int, message string)
+type NotFoundHandler func(res http.ResponseWriter, message string)
 
 // WebServer is the DSL entry point.
 type WebServer struct {
@@ -62,7 +80,7 @@ type WebServer struct {
 // Server creates a server listening on 0.0.0.0:3000 by default.
 func Server(opts ...ServerOption) *WebServer {
 	s := &WebServer{
-		cfg:      ServerConfig{Host: "0.0.0.0", Port: 3000},
+		cfg:      ServerConfig{Host: "0.0.0.0", Port: 3000, IdleTimeout: 10 * time.Second},
 		notFound: defaultNotFound,
 	}
 
@@ -174,11 +192,11 @@ func (s *WebServer) handler() http.Handler {
 	return chain(mux, s.mws)
 }
 
-func defaultNotFound(res http.ResponseWriter, statusCode int, message string) {
+func defaultNotFound(res http.ResponseWriter, message string) {
 	if message == "" {
-		message = http.StatusText(statusCode)
+		message = http.StatusText(http.StatusNotFound)
 	}
-	http.Error(res, message, statusCode)
+	http.Error(res, message, http.StatusNotFound)
 }
 
 // withNotFoundHandler captures a 404 written by any route handler and lets the
@@ -194,7 +212,7 @@ func withNotFoundHandler(next http.Handler, handler NotFoundHandler) http.Handle
 			return
 		}
 		writer.restoreHeaders()
-		handler(res, writer.status, writer.body.String())
+		handler(res, writer.body.String())
 	})
 }
 
