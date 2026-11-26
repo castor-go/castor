@@ -9,7 +9,7 @@ import (
 
 const (
 	flashCookieName = "WG_FLASH"
-	flashLifetime   = 2 * time.Second
+	flashLifetime   = 10 * time.Second
 )
 
 // FlashMessage is a single flash key/value pair.
