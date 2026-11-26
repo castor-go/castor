@@ -90,8 +90,8 @@ Press `Ctrl+C` to stop the server. Castor handles the signal and shuts down grac
 
 ## Examples
 
-- Basic
-- TODO
+- [Basic](https://github.com/castor-go/castor/tree/main/examples/basic)
+- [TODO](https://github.com/castor-go/castor/tree/main/examples/todo)
 
 ## License
 
