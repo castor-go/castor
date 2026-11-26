@@ -1,0 +1,7 @@
+package pages
+
+templ Partial(target string, children templ.Component) {
+	<hx-partial hx-target={target}>
+		@children
+	</hx-partial>
+}

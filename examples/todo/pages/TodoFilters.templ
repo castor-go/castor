@@ -1,0 +1,43 @@
+package pages
+
+import "todo/todos"
+
+func completed(tasks []todos.Task) int {
+	total := 0
+	for _, t := range tasks {
+		if t.Completed {
+			total++
+		}
+	}
+	return total
+}
+
+templ TodoFilters(filter string, tasks []todos.Task) {
+	{{ totalCompleted := completed(tasks) }}
+	{{ isActive := filter == "active" }}
+	{{ isAll := filter == "" || filter == "all" }}
+	{{ isCompleted := filter == "completed" }}
+
+	<footer id="filters" class="footer">
+		<span class="todo-count">
+			<strong>{len(tasks)}</strong> item(s)
+		</span>
+		<ul id="filters" class="filters">
+			<li>
+				<a href="#" hx-get="/?filter=all" hx-target="#todos" hx-swap="outerMorph"
+					class={templ.KV("selected", isAll)}>All</a>
+			</li>
+			<li>
+				<a href="#" hx-get="/?filter=active" hx-target="#todos" hx-swap="outerMorph"
+					class={templ.KV("selected", isActive)}>Active</a>
+			</li>
+			<li>
+				<a href="#" hx-get="/?filter=completed" hx-target="#todos" hx-swap="outerMorph"
+					class={templ.KV("selected", isCompleted)}>Completed</a>
+			</li>
+		</ul>
+		if totalCompleted > 0 {
+			<button class="clear-completed" hx-post="/clear" hx-target="#todos">Clear completed ({totalCompleted})</button>
+		}
+	</footer>
+}

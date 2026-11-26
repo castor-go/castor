@@ -1,0 +1,26 @@
+package pages
+
+import "todo/todos"
+
+templ TaskItem(item todos.Task) {
+	<li id={"task-" + item.ID} class={templ.KV("completed", item.Completed)}>
+		<div class="view">
+			<input class="toggle" type="checkbox" id={item.ID}
+				hx-patch={"/"+item.ID} hx-target={"#task-" + item.ID} hx-trigger="change" />
+			<label>{item.Name}</label>
+			<button class="destroy" hx-delete={"/" + item.ID} hx-target={"#task-" + item.ID} hx-swap="delete"></button>
+		</div>
+	</li>
+}
+
+templ TodoList(tasks []todos.Task) {
+	<section id="todos" class="main">
+		<input class="toggle-all" type="checkbox" name="toggle" />
+		<label for="toggle-all">Mark all as complete</label>
+		<ul class="todo-list">
+			for _, item := range tasks {
+			@TaskItem(item)
+			}
+		</ul>
+	</section>
+}

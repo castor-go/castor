@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  dev:
+    cmds:
+      - go run .
+
+  ui:
+    cmds:
+      - templ generate

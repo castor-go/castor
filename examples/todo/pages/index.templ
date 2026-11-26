@@ -1,0 +1,38 @@
+package pages
+
+import "todo/todos"
+
+templ Index(tasks []todos.Task, filter string) {
+	<html>
+	<head>
+  		<meta charset="UTF-8">
+    	<meta name="htmx-config" content='{"defaultSwap":"outerMorph"}' />
+    	<title>TodoMVC</title>
+      	<link rel="stylesheet" href="/assets/css/style.css">
+     	<script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.2/dist/htmx.js" crossorigin="anonymous"></script>
+	</head>
+	<body>
+		<div class="todomvc-wrapper">
+			<section id="app" class="todoapp">
+				<form hx-method="post" hx-action="/todos" hx-target="#todos"
+					hx-on:htmx:after:request="this.reset()">
+					<header class="header">
+						<h1>Todos</h1>
+						<input class="new-todo" autofocus="true" name="name"
+							placeholder="What needs to be done?" />
+					</header>
+				</form>
+
+				@TodoList(tasks)
+
+				@TodoFilters(filter, tasks)
+			</section>
+
+			<footer class="info">
+				<p>Written by Keuller Magalh&atilde;es</p>
+				<p>Todo Demo</p>
+			</footer>
+		</div>
+	</body>
+	</html>
+}
