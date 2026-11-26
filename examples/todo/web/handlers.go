@@ -5,11 +5,11 @@ import (
 	"todo/pages"
 	"todo/todos"
 
-	wg "github.com/webgo/webgo"
+	cg "github.com/castor-go/castor"
 )
 
 func IndexHandler(res http.ResponseWriter, req *http.Request) {
-	filter := wg.GetQueryParam(req, "filter")
+	filter := cg.GetQueryParam(req, "filter")
 	if filter != "" && IsHtmx(req) {
 		todoList := todos.ApplyFilter(filter)
 		todos := pages.TodoList(todos.ApplyFilter(filter))
@@ -24,10 +24,10 @@ func IndexHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func AddTaskHandler(res http.ResponseWriter, req *http.Request) {
-	logger := wg.GetLog(req)
-	filter := wg.GetQueryParam(req, "filter")
+	logger := cg.GetLog(req)
+	filter := cg.GetQueryParam(req, "filter")
 
-	data, err := wg.ReadFormData(req)
+	data, err := cg.ReadFormData(req)
 	if err != nil {
 		logger.Error("fail to read request body", "cause", err.Error())
 		return
@@ -43,7 +43,7 @@ func AddTaskHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func CompleteTaskHandler(res http.ResponseWriter, req *http.Request) {
-	id := wg.GetPathParam(req, "id")
+	id := cg.GetPathParam(req, "id")
 	if id == "" {
 		res.WriteHeader(http.StatusNoContent)
 		return
@@ -56,7 +56,7 @@ func CompleteTaskHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func DestroyTaskHandler(res http.ResponseWriter, req *http.Request) {
-	id := wg.GetPathParam(req, "id")
+	id := cg.GetPathParam(req, "id")
 	if id != "" {
 		todos.DeleteTask(id)
 	}
