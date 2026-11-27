@@ -24,16 +24,18 @@ type (
 		Error(msg string, args ...any)
 	}
 
-	// DefaultLogFormatter is the default text log formatter.
+	// DefaultLogFormatter is the default log formatter.
 	DefaultLogFormatter struct {
 		// Logger receives formatted entries. log.Default is used when nil.
-		Logger LoggerInterface
-		Format LogFormat
+		Logger            LoggerInterface
+		Format            LogFormat
+		RequestLogEnabled bool
 	}
 
 	// LogFormatter creates a LogEntry for each request.
 	LogFormatter interface {
 		NewLogEntry(req *http.Request) LogEntry
+		IsRequestLogEnabled() bool
 	}
 
 	// LogEntry records the result of a request.
@@ -89,7 +91,9 @@ func RequestLogger(formatter LogFormatter) func(next http.Handler) http.Handler 
 					ContentType: wrapped.Header().Get("Content-Type"),
 					Timer:       time.Since(start),
 				}
-				logRequestLog(entry, reqEntry, respEntry)
+				if formatter.IsRequestLogEnabled() {
+					logRequestLog(entry, reqEntry, respEntry)
+				}
 			}()
 			next.ServeHTTP(wrapped, WithLogEntry(req, entry))
 		})
@@ -126,9 +130,9 @@ func logRequestLog(entry LogEntry, reqEntry RequestLogEntry, resEntry ResponseLo
 }
 
 // WithLogEntry stores entry in the request context.
-func WithLogEntry(r *http.Request, entry LogEntry) *http.Request {
-	ctx := context.WithValue(r.Context(), LogEntryCtxKey, entry)
-	return r.WithContext(ctx)
+func WithLogEntry(req *http.Request, entry LogEntry) *http.Request {
+	ctx := context.WithValue(req.Context(), LogEntryCtxKey, entry)
+	return req.WithContext(ctx)
 }
 
 // NewLogEntry starts formatting a request log line.
@@ -137,8 +141,11 @@ func (f *DefaultLogFormatter) NewLogEntry(req *http.Request) LogEntry {
 		DefaultLogFormatter: f,
 		buf:                 &bytes.Buffer{},
 	}
-
 	return entry
+}
+
+func (f *DefaultLogFormatter) IsRequestLogEnabled() bool {
+	return f.RequestLogEnabled
 }
 
 type defaultLogEntry struct {
@@ -173,19 +180,21 @@ func (entry *defaultLogEntry) Panic(v any, stack []byte) {
 	// printPrettyStackBytes(v, stack)
 }
 
-func init() {
-	logFormatter := &DefaultLogFormatter{
-		Logger: slog.New(slog.NewJSONHandler(os.Stdout, nil)),
-	}
-	if !IsTTY {
-		logFormatter = &DefaultLogFormatter{
-			Logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-		}
-	}
-	DefaultLogger = RequestLogger(logFormatter)
-}
-
 // GetReqID returns the request ID stored in ctx.
 func GetReqID(ctx context.Context) string {
 	return GetValue[string](ctx, RequestIDKey)
+}
+
+func init() {
+	logFormatter := &DefaultLogFormatter{
+		Logger:            slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+		RequestLogEnabled: true,
+	}
+	if !IsTTY {
+		logFormatter = &DefaultLogFormatter{
+			Logger:            slog.New(slog.NewTextHandler(os.Stdout, nil)),
+			RequestLogEnabled: true,
+		}
+	}
+	DefaultLogger = RequestLogger(logFormatter)
 }

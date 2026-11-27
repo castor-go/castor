@@ -2,6 +2,7 @@ package castor
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 )
 
@@ -79,8 +80,8 @@ func route(method, pattern string, handler http.Handler) Route {
 }
 
 func chain(handler http.Handler, middlewares []Middleware) http.Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		handler = middlewares[i](handler)
+	for _, middlew := range slices.Backward(middlewares) {
+		handler = middlew(handler)
 	}
 	return handler
 }
