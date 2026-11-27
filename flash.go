@@ -29,8 +29,8 @@ type FlashWriter struct {
 }
 
 // Flash starts the flash-message DSL.
-func Flash(w http.ResponseWriter) FlashWriter {
-	return FlashWriter{w: w}
+func Flash(res http.ResponseWriter) FlashWriter {
+	return FlashWriter{w: res}
 }
 
 // Messages stores messages in a URL-escaped JSON cookie that expires after two seconds.
@@ -49,4 +49,22 @@ func (f FlashWriter) Messages(messages ...FlashMessage) {
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func ReadFlashMessages(req *http.Request) []FlashMessage {
+	c := GetCookie(req, "WG_FLASH")
+	if c == "" {
+		return nil
+	}
+
+	value, err := url.QueryUnescape(c)
+	if err != nil {
+		return nil
+	}
+
+	var messages []FlashMessage
+	if err := json.Unmarshal([]byte(value), &messages); err != nil {
+		return nil
+	}
+	return messages
 }

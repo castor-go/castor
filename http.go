@@ -35,8 +35,8 @@ func GetValue[T any](ctx context.Context, key any) T {
 }
 
 // GetLogEntry returns the LogEntry stored in the request context.
-func GetLog(r *http.Request) LogEntry {
-	return GetValue[LogEntry](r.Context(), LogEntryCtxKey)
+func GetLog(req *http.Request) LogEntry {
+	return GetValue[LogEntry](req.Context(), LogEntryCtxKey)
 }
 
 // Json writes data as a JSON response with status 200 (default).
