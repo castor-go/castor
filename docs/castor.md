@@ -910,9 +910,12 @@ Castor's logging support is built from small interfaces. The server installs `Lo
 
 `DefaultLogger` is called by `Logger`. Replace it before creating/serving the server to customize request logging globally. The default is a `RequestLogger` using a `DefaultLogFormatter` that writes JSON when stdout is a terminal and text otherwise.
 
+To disable logging every request, just set the `RequestLogEnabled` property to false as shown.
+
 ```go
 castor.DefaultLogger = castor.RequestLogger(&castor.DefaultLogFormatter{
 	Logger: slog.New(slog.NewJSONHandler(os.Stdout, nil)),
+	RequestLogEnabled: false,
 })
 
 server := castor.Server()
@@ -932,8 +935,9 @@ type LogFormatter interface {
 
 ```go
 type DefaultLogFormatter struct {
-	Logger LoggerInterface
-	Format LogFormat
+	Logger            LoggerInterface
+	Format            LogFormat
+	RequestLogEnabled bool
 }
 ```
 
@@ -959,19 +963,6 @@ formatter := &castor.DefaultLogFormatter{Logger: slog.Default()}
 entry := formatter.NewLogEntry(r)
 entry.Info("request started")
 ```
-
-### LogFormat
-
-```go
-type LogFormat int
-
-const (
-	JsonFormat = iota + 1
-	TextFormat
-)
-```
-
-`LogFormat` identifies a logging format for formatters that use it. `JsonFormat` and `TextFormat` are the built-in values.
 
 ```go
 formatter := &castor.DefaultLogFormatter{
@@ -1000,35 +991,9 @@ logger.Info("server starting", "port", 3000)
 
 `LogEntry` represents one request's logging state. `RequestLogger` logs through `Info`; `Recoverer` calls `Panic` when it recovers a panic.
 
-```go
-log := castor.GetLog(req)
-log.Info("handling request", "path", r.URL.Path)
-```
-
-### WithLogEntry
-
-```go
-func WithLogEntry(req *http.Request, entry LogEntry) *http.Request
-```
-
-`WithLogEntry` returns a request with `entry` stored in its context. `RequestLogger` uses it automatically.
-
-```go
-formatter := &castor.DefaultLogFormatter{Logger: slog.Default()}
-r = castor.WithLogEntry(req, formatter.NewLogEntry(r))
-
-castor.Get("/", func(res http.ResponseWriter, req *http.Request) {
-	castor.GetLog(req).Info("inside handler")
-})
-```
-
 ### GetLog
 
-```go
-func GetLog(req *http.Request) LogEntry
-```
-
-`GetLog` returns the `LogEntry` stored in the request context, or `nil` when no logger is installed.
+`GetLog` returns the `LogEntry` stored in the request context.
 
 ```go
 log := castor.GetLog(req)

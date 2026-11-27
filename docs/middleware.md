@@ -981,8 +981,6 @@ func Recoverer(next http.Handler) http.Handler
 
 `Recoverer` recovers panics, logs them, and writes `500 Internal Server Error` when a response is still possible. It re-panics `http.ErrAbortHandler` so the connection is aborted. When a `castor.LogEntry` is in the request context, `Panic` is called on it; otherwise a formatted stack trace is printed to stderr.
 
-Place `Recoverer` after `Logger` so the panic is associated with the request log entry.
-
 ```go
 server := castor.Server().Middlewares(middleware.Recoverer)
 ```
