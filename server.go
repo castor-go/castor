@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -297,9 +298,7 @@ func (w *notFoundWriter) Unwrap() http.ResponseWriter {
 func (w *notFoundWriter) restoreHeaders() {
 	header := w.ResponseWriter.Header()
 	clear(header)
-	for key, values := range w.headerSnapshot {
-		header[key] = values
-	}
+	maps.Copy(header, w.headerSnapshot)
 }
 
 type onlyWriter struct {

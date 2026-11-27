@@ -26,8 +26,8 @@ type WrapResponseWriter interface {
 
 // NewWrapResponseWriter wraps w. protoMajor is accepted for API compatibility;
 // the wrapper adapts to the underlying writer at call time.
-func NewWrapResponseWriter(w http.ResponseWriter, protoMajor int) WrapResponseWriter {
-	return &wrapWriter{ResponseWriter: w}
+func NewWrapResponseWriter(res http.ResponseWriter, protoMajor int) WrapResponseWriter {
+	return &wrapWriter{ResponseWriter: res}
 }
 
 type wrapWriter struct {

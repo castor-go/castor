@@ -107,21 +107,21 @@ func NotFound(res http.ResponseWriter, message string) {
 }
 
 // GetParam returns a path parameter, or "" when it does not exist.
-func GetPathParam(r *http.Request, name string) string {
-	return r.PathValue(name)
+func GetPathParam(req *http.Request, name string) string {
+	return req.PathValue(name)
 }
 
 // GetQuery returns a query string parameter, or "" when it does not exist.
-func GetQueryParam(r *http.Request, name string) string {
-	return r.URL.Query().Get(name)
+func GetQueryParam(req *http.Request, name string) string {
+	return req.URL.Query().Get(name)
 }
 
 // Redirect writes a redirect to uri. The default status is 302 Found.
-func Redirect(w http.ResponseWriter, uri string, status ...int) {
+func Redirect(res http.ResponseWriter, uri string, status ...int) {
 	code := http.StatusFound
 	if len(status) > 0 {
 		code = status[0]
 	}
-	w.Header().Set("Location", uri)
-	w.WriteHeader(code)
+	res.Header().Set("Location", uri)
+	res.WriteHeader(code)
 }
